@@ -78,7 +78,21 @@ def load_data_to_bq(data: pd.DataFrame,
     # 🎯 Hint for "*** TypeError: expected bytes, int found":
     # BQ can only accept "str" columns starting with a letter or underscore column
 
-    pass  # YOUR CODE HERE
+    # Loop through the DataFrame columns
+    for col in data.columns:
+        # Check if the column name is a string
+        if not isinstance(col, str):
+            # Add an "_" to the original column name to make it a string
+            new_col = f"_{col}"
+            # Rename the column
+            data.rename(columns={col: new_col}, inplace=True)
+
+    client = bigquery.Client()
+
+    write_mode = "WRITE_TRUNCATE"
+    job_config = bigquery.LoadJobConfig(write_disposition=write_mode)
+
+    job = client.load_table_from_dataframe(data, full_table_name, job_config=job_config)
+    result = job.result()
 
     print(f"✅ Data saved to bigquery, with shape {data.shape}")
-

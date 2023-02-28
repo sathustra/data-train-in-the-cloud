@@ -29,15 +29,24 @@ def preprocess(min_date:str = '2009-01-01', max_date:str = '2015-01-01') -> None
         WHERE pickup_datetime BETWEEN '{min_date}' AND '{max_date}'
         ORDER BY pickup_datetime
         """
-
-    pass  # YOUR CODE HERE
+    data_query_cache_path = Path(LOCAL_DATA_PATH).joinpath("raw", f"query_{min_date}_{max_date}_{DATA_SIZE}.csv")
+    data_query = get_data_with_cache(gcp_project=GCP_PROJECT, query=query, cache_path=data_query_cache_path, data_has_header=True)
 
     # Process data
-    pass  # YOUR CODE HERE
+    df_clean = clean_data(data_query)
+    X = df_clean.drop("fare_amount",axis=1)
+    y = df_clean[["fare_amount"]]
+    X_processed = preprocess_features(X)
+
+    final_df = pd.DataFrame(np.concatenate((df_clean[["pickup_datetime"]], X_processed,y),axis=1))
 
     # Load on Big Query a dataframe containing [pickup_datetime, X_processed, y]
     # using data.load_data_to_bq()
-    pass  # YOUR CODE HERE
+    load_data_to_bq(final_df,
+                 gcp_project=GCP_PROJECT,
+                bq_dataset=BQ_DATASET,
+                table=f"preprocessed_{DATA_SIZE}",
+                truncate=True)
 
     print("✅ preprocess() done \n")
 
@@ -111,7 +120,7 @@ def evaluate(min_date:str = '2014-01-01',
     max_date = parse(max_date).strftime('%Y-%m-%d') # e.g '2009-01-01'
 
     # Query your Big Query processed table and get data_processed using `get_data_with_cache`
-    pass  # YOUR CODE HERE
+
 
     if data_processed.shape[0] == 0:
         print("❌ No data to evaluate on")
